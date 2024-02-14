@@ -87,7 +87,7 @@ def weights_init_normal(m):
            
 
 class GANLoss(nn.Module):
-    def __init__(self, gan_mode, target_real_label=1.0, target_fake_label=0.0):
+    def __init__(self, target_real_label=1.0, target_fake_label=0.0):
 
         super(GANLoss, self).__init__()
         
@@ -96,11 +96,8 @@ class GANLoss(nn.Module):
         
         self.gan_mode = gan_mode
         
-        if self.gan_mode == 'vanilla':
-            self.loss = nn.BCEWithLogitsLoss()
+        self.loss = nn.BCEWithLogitsLoss()
             
-        elif self.gan_mode == 'wgangp':
-            self.loss = None
             
     def get_target_tensor(self, prediction, target_is_real):
         
@@ -114,16 +111,8 @@ class GANLoss(nn.Module):
 
     def __call__(self, prediction, target_is_real):
         
-        if self.gan_mode == 'vanilla':
-            target_tensor = self.get_target_tensor(prediction, target_is_real)
-            loss = self.loss(prediction, target_tensor)
-            
-        elif self.gan_mode == 'wgangp':
-            if target_is_real:
-                loss = -prediction.mean()
-            else:
-                loss = prediction.mean()
-                
+        target_tensor = self.get_target_tensor(prediction, target_is_real)
+        loss = self.loss(prediction, target_tensor)
         return loss
     
 
@@ -246,3 +235,56 @@ class CyDataset(Dataset):
               'L pm' : torch.tensor(self.L[idx][1])
         }
         return sample
+
+    
+
+#LATENT GENERATOR    
+class CINResnetGenerator(nn.Module):
+    def __init__(self, nlatent, input_nc, output_nc, ngf=64, norm_layer=CondInstanceNorm,
+                 use_dropout=False, n_blocks=9, gpu_ids=[], padding_type='reflect'):
+        assert(n_blocks >= 0)
+        super(CINResnetGenerator, self).__init__()
+        self.gpu_ids = gpu_ids
+
+        instance_norm = functools.partial(InstanceNorm2d, affine=True)
+
+        model = [
+            nn.ReflectionPad2d(3),
+            nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0, stride=1, bias=True),
+            norm_layer(ngf, nlatent),
+            nn.ReLU(True),
+
+            nn.Conv2d(ngf, 2*ngf, kernel_size=3, padding=1, stride=1, bias=True),
+            norm_layer(2*ngf, nlatent),
+            nn.ReLU(True),
+
+            nn.Conv2d(2*ngf, 4*ngf, kernel_size=3, padding=1, stride=2, bias=True),
+            norm_layer(4*ngf, nlatent),
+            nn.ReLU(True)
+        ]
+        
+        for i in range(3):
+            model += [CINResnetBlock(x_dim=4*ngf, z_dim=nlatent, padding_type=padding_type,
+                                     norm_layer=norm_layer, use_dropout=use_dropout, use_bias=True)]
+
+        model += [
+            nn.ConvTranspose2d(4*ngf, 2*ngf, kernel_size=3, stride=2, padding=1,
+                               output_padding=1, bias=True),
+            norm_layer(2*ngf , nlatent),
+            nn.ReLU(True),
+
+            nn.Conv2d(2*ngf, ngf, kernel_size=3, padding=1, stride=1, bias=True),
+            norm_layer(ngf, nlatent),
+            nn.ReLU(True),
+
+            nn.Conv2d(ngf, output_nc, kernel_size=7, padding=3),
+            nn.Tanh()
+        ]
+
+        self.model = TwoInputSequential(*model)
+
+    def forward(self, input, noise):
+        if len(self.gpu_ids)>1 and isinstance(input.data, torch.cuda.FloatTensor):
+            return nn.parallel.data_parallel(self.model, (input, noise), self.gpu_ids)
+        else:
+            return self.model(input, noise)
