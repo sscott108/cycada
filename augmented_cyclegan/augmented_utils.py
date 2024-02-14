@@ -335,10 +335,6 @@ class NLayerDiscriminator(nn.Module):
     def forward(self, input):
         return self.model(input)
     
-    
-######################################################################
-# Encoder network for latent variables
-######################################################################
 class Latent_Encoder(nn.Module):
     def __init__(self, nlatent, input_nc, nef, norm_layer):
         super(Latent_Encoder, self).__init__()
@@ -371,8 +367,8 @@ class Latent_Encoder(nn.Module):
         self.conv_modules = nn.Sequential(*sequence)
 
         # make sure we return mu and logvar for latent code normal distribution
-        self.enc_mu = nn.Conv2d(8*nef, nlatent, kernel_size=1, stride=1, padding=0, bias=True)
-        self.enc_logvar = nn.Conv2d(8*nef, nlatent, kernel_size=1, stride=1, padding=0, bias=True)
+        self.enc_mu = nn.Conv2d(8*nef, nlatent, kernel_size=11, stride=1, padding=0, bias=True)
+        self.enc_logvar = nn.Conv2d(8*nef, nlatent, kernel_size=11, stride=1, padding=0, bias=True)
 
     def forward(self, input):
 
@@ -380,4 +376,4 @@ class Latent_Encoder(nn.Module):
         mu = self.enc_mu(conv_out)
         logvar = self.enc_logvar(conv_out)
         
-        return mu.view(mu.size(0), -1), logvar.view(logvar.size(0), -1)
+        return mu, logvar
