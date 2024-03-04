@@ -163,20 +163,17 @@ class CyDataset(Dataset):
     def __init__(self):
 
         self.D = []
-        self.L = []
+        self.B = []
                 
-        with open('/datacommons/carlsonlab/srs108/old/ol/Delhi_labeled.pkl', "rb") as fp:
+        with open('/datacommons/carlsonlab/srs108/old/ol/Delhi_clean.pkl', "rb") as fp:
             for station in tqdm(pkl.load(fp)):
                 self.D.append(tuple((station['Image'][:,:,:3], station['PM25'])))
                 
-        with open('/datacommons/carlsonlab/srs108/old/ol/Lucknow.pkl', "rb") as fp:
+        with open('/datacommons/carlsonlab/srs108/old/ol/Beijing_clean.pkl', "rb") as fp:
             for station in tqdm(pkl.load(fp)):
-                for datapoint in station:
-                    luck_img = datapoint['Image'][:,:,:3]
-                    if luck_img.shape == (224, 224,3):  
-                        self.L.append(tuple((luck_img, datapoint['PM'])))
+                self.B.append(tuple((station['Image'][:,:,:3], station['PM25'])))
                         
-        self.L = random.choices(self.L, k= len(self.D))
+        self.B = random.choices(self.B, k= len(self.D))
         
     def __len__(self): return (len(self.D))
         
@@ -192,14 +189,14 @@ class CyDataset(Dataset):
 
         d_img = self.D[idx][0]
         d_img = transform(d_img)        
-        l_img = self.L[idx][0]
-        l_img = transform(l_img)
+        b_img = self.B[idx][0]
+        b_img = transform(b_img)
         
         sample = {
               'D img': d_img,
               'D pm' : torch.tensor(self.D[idx][1]),
-              'L img': l_img,
-              'L pm' : torch.tensor(self.L[idx][1])
+              'B img': b_img,
+              'B pm' : torch.tensor(self.B[idx][1])
         }
         return sample
 
