@@ -538,11 +538,22 @@ class CyDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
+            #Delhi normalization
         transform  = transforms.Compose([
                             transforms.ToPILImage(),
                             transforms.RandomHorizontalFlip(),
                             transforms.RandomVerticalFlip(),
-                            transforms.ToTensor()])
+                            transforms.ToTensor(),
+                            transforms.Normalize((0.7201, 0.6804, 0.6236), (0.0873, 0.0778, 0.0751))
+        ])
+            #Lucknow 
+#         transform  = transforms.Compose([
+#                             transforms.ToPILImage(),
+#                             transforms.RandomHorizontalFlip(),
+#                             transforms.RandomVerticalFlip(),
+#                             transforms.ToTensor(),
+#                             transforms.Normalize((0.7201, 0.6804, 0.6236), (0.0873, 0.0778, 0.0751))
+#         ])
 
         d_img = self.D[idx][0]
         d_img = transform(d_img)        

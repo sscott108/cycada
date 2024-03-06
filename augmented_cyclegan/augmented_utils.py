@@ -173,7 +173,7 @@ class CyDataset(Dataset):
             for station in tqdm(pkl.load(fp)):
                 self.B.append(tuple((station['Image'][:,:,:3], station['PM25'])))
                         
-        self.B = random.choices(self.B, k= len(self.D))
+        self.D = random.choices(self.D, k= len(self.B))
         
     def __len__(self): return (len(self.D))
         
