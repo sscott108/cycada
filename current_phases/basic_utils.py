@@ -47,6 +47,9 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'On {device}')
 Tensor  = torch.cuda.FloatTensor
 import torchvision.models as models
+from scipy import stats
+from sklearn import metrics
+import seaborn as sns
 
 # data (img)
 img_height = 256
@@ -54,8 +57,6 @@ img_width = 256
 channels = 3
 
 # training
-epoch = 0 # epoch to start training from
-n_epochs = 50 # number of epochs of training
 batch_size = 1 # size of the batches
 lr = 0.0002 # adam : learning rate
 b1 = 0.5 # adam : decay of first order momentum of gradient
